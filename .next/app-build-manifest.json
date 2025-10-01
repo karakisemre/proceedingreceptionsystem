@@ -1,41 +1,25 @@
 {
   "pages": {
-    "/_not-found/page": [
-      "static/chunks/webpack-d568e8aed9874c1e.js",
-      "static/chunks/4bd1b696-c023c6e3521b1417.js",
-      "static/chunks/255-4efeec91c7871d79.js",
-      "static/chunks/main-app-5ae9891d478114c3.js",
-      "static/chunks/app/_not-found/page-242958215bb34e0d.js"
-    ],
     "/layout": [
-      "static/chunks/webpack-d568e8aed9874c1e.js",
-      "static/chunks/4bd1b696-c023c6e3521b1417.js",
-      "static/chunks/255-4efeec91c7871d79.js",
-      "static/chunks/main-app-5ae9891d478114c3.js",
-      "static/css/cbaf85c794de764e.css",
-      "static/chunks/app/layout-4f99878fd75ec5a3.js"
-    ],
-    "/api/signed-upload/route": [
-      "static/chunks/webpack-d568e8aed9874c1e.js",
-      "static/chunks/4bd1b696-c023c6e3521b1417.js",
-      "static/chunks/255-4efeec91c7871d79.js",
-      "static/chunks/main-app-5ae9891d478114c3.js",
-      "static/chunks/app/api/signed-upload/route-a87f59aa6f8e34dc.js"
-    ],
-    "/api/submit/route": [
-      "static/chunks/webpack-d568e8aed9874c1e.js",
-      "static/chunks/4bd1b696-c023c6e3521b1417.js",
-      "static/chunks/255-4efeec91c7871d79.js",
-      "static/chunks/main-app-5ae9891d478114c3.js",
-      "static/chunks/app/api/submit/route-a87f59aa6f8e34dc.js"
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/layout.css",
+      "static/chunks/app/layout.js"
     ],
     "/page": [
-      "static/chunks/webpack-d568e8aed9874c1e.js",
-      "static/chunks/4bd1b696-c023c6e3521b1417.js",
-      "static/chunks/255-4efeec91c7871d79.js",
-      "static/chunks/main-app-5ae9891d478114c3.js",
-      "static/chunks/945-e74d80bde418e878.js",
-      "static/chunks/app/page-5f3be6618e5ac4ca.js"
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/page.js"
+    ],
+    "/api/signed-upload/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/signed-upload/route.js"
+    ],
+    "/api/submit/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/submit/route.js"
     ]
   }
 }

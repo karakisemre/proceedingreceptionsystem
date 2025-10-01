@@ -1,7 +1,0 @@
-{
-  "version": 1,
-  "functions": {
-    "/api/signed-upload": {},
-    "/api/submit": {}
-  }
-}
