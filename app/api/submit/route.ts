@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabaseServer'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
-
+import { notifyOrganizer } from '@/lib/mailer'
 export const runtime = 'nodejs'
 
 // ---- helpers ----
@@ -11,37 +11,6 @@ function wordCount(text: string): number {
 }
 function isEmail(s: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)
-}
-async function sendEmail(payload: {
-  full_name: string; email: string; phone?: string | null;
-  university: string; title: string; file_url: string; ip: string | null; ua: string | null;
-}) {
-  const apiKey = process.env.RESEND_API_KEY!
-  const to = process.env.ORGANIZER_EMAIL!
-  const from = process.env.FROM_EMAIL!
-
-  const html = `
-    <h3>Yeni Başvuru</h3>
-    <p><b>Ad Soyad:</b> ${payload.full_name}</p>
-    <p><b>E-posta:</b> ${payload.email}</p>
-    <p><b>Telefon:</b> ${payload.phone ?? '-'}</p>
-    <p><b>Üniversite:</b> ${payload.university}</p>
-    <p><b>Başlık:</b> ${payload.title}</p>
-    <p><b>Dosya:</b> <a href="${payload.file_url}">${payload.file_url}</a></p>
-    <hr/>
-    <p><b>IP:</b> ${payload.ip ?? '-'}</p>
-    <p><b>UA:</b> ${payload.ua ?? '-'}</p>
-  `.trim()
-
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ from, to, subject: `Yeni başvuru: ${payload.title}`, html })
-  })
-  if (!res.ok) throw new Error(`Resend error: ${await res.text()}`)
 }
 
 // ---- rate-limit ----
@@ -125,8 +94,7 @@ export async function POST(req: NextRequest) {
     const base = process.env.NEXT_PUBLIC_SUPABASE_URL!
     const file_url = `${base}/storage/v1/object/public/${BUCKET}/${json.file_path}`
 
-    // 6) E-posta bildirimi
-    await sendEmail({
+    await notifyOrganizer({
       full_name: json.full_name,
       email: json.email,
       phone: json.phone ?? null,
