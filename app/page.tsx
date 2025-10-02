@@ -4,6 +4,7 @@ import React, { useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabaseClient } from '@/lib/supabaseClient'
 import { wordCount } from '@/lib/utils'
+import { universitiesTR } from '@/lib/universities'
 
 const degreeOpts = [
   { value: 'lisans', label: 'Lisans öğrencisi' },
@@ -198,9 +199,19 @@ export default function Page() {
           </div>
           <div>
             <label className="block text-sm font-medium">Üniversite*</label>
-            <input name="university" value={form.university} onChange={e=>setField('university', e.target.value)}
-                   required className="mt-1 w-full border rounded p-2" />
+            <select
+              name="university"
+              value={form.university}
+              onChange={e => setField('university', e.target.value)}
+              required
+              className="mt-1 w-full border rounded p-2">
+              <option value="">-- Üniversite Seçiniz --</option>
+              {universitiesTR.map(u => (
+                <option key={u} value={u}>{u}</option>
+              ))}
+            </select>
           </div>
+                    
         </div>
 
         <div>
