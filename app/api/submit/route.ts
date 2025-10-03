@@ -3,20 +3,15 @@ import { supabaseServer } from '@/lib/supabaseServer'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
 import { notifyOrganizer } from '@/lib/mailer'
+
 export const runtime = 'nodejs'
 
-// ---- helpers ----
-function wordCount(text: string): number {
-  return (text.trim().match(/\S+/g) || []).length
-}
-function isEmail(s: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)
-}
+function wordCount(text: string): number { return (text.trim().match(/\S+/g) || []).length }
+function isEmail(s: string) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s) }
 
-// ---- rate-limit ----
 const rl = new Ratelimit({
   redis: Redis.fromEnv(),
-  limiter: Ratelimit.fixedWindow(5, '1 m'), // IP başına dakikada 10
+  limiter: Ratelimit.fixedWindow(5, '1 m'),
   analytics: true
 })
 
@@ -31,16 +26,16 @@ export async function POST(req: NextRequest) {
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null
     const ua = req.headers.get('user-agent') ?? null
 
-    // 1) Rate-limit
+    // 1) Rate limit
     const limit = await rl.limit(`submit:${ip ?? 'unknown'}`)
     if (!limit.success) {
       return NextResponse.json({ error: 'Çok fazla istek (rate-limit).' }, { status: 429 })
     }
 
-    // 2) JSON body
+    // 2) Body
     const json = await req.json()
 
-    // 3) Validasyonlar
+    // 3) Validasyon
     const required = [
       'degree', 'full_name', 'email', 'university', 'title', 'presentation',
       'keywords', 'summary', 'file_name', 'file_mime', 'file_size', 'file_path'
@@ -54,16 +49,12 @@ export async function POST(req: NextRequest) {
     if (!['sozlu', 'poster'].includes(json.presentation)) {
       return NextResponse.json({ error: 'presentation geçersiz.' }, { status: 400 })
     }
-    if (!isEmail(json.email)) {
-      return NextResponse.json({ error: 'Geçerli bir e-posta giriniz.' }, { status: 400 })
-    }
+    if (!isEmail(json.email)) return NextResponse.json({ error: 'Geçerli bir e-posta giriniz.' }, { status: 400 })
     if (!Array.isArray(json.keywords) || json.keywords.length === 0 || json.keywords.length > 10) {
       return NextResponse.json({ error: 'Anahtar kelimeler 1–10 arası olmalı.' }, { status: 400 })
     }
     const wc = wordCount(String(json.summary || ''))
-    if (wc > 500) {
-      return NextResponse.json({ error: `Özet en fazla 500 kelime olmalı (şu an ${wc}).` }, { status: 400 })
-    }
+    if (wc > 500) return NextResponse.json({ error: `Özet en fazla 500 kelime olmalı (şu an ${wc}).` }, { status: 400 })
     if (!ALLOWED.includes(json.file_mime)) {
       return NextResponse.json({ error: 'Sadece PDF veya Word yükleyebilirsiniz.' }, { status: 415 })
     }
@@ -89,11 +80,26 @@ export async function POST(req: NextRequest) {
     })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    // 5) Dosya public URL (bucket public ise)
-    const BUCKET = process.env.SUPABASE_BUCKET!
-    const base = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const file_url = `${base}/storage/v1/object/public/${BUCKET}/${json.file_path}`
+    // 5) Dosya URL'si — PUBLIC ise getPublicUrl, PRIVATE ise createSignedUrl
+    const BUCKET = process.env.SUPABASE_BUCKET
+    if (!BUCKET) {
+      return NextResponse.json({ error: 'SUPABASE_BUCKET env tanımlı değil.' }, { status: 500 })
+    }
 
+    // PUBLIC bucket ise:
+    const pub = sb.storage.from(BUCKET).getPublicUrl(json.file_path)
+    let file_url = pub?.data?.publicUrl
+
+    // Eğer bucket PRIVATE ise üstteki null gelir; o zaman imzalı link üret:
+    if (!file_url) {
+      const signed = await sb.storage.from(BUCKET).createSignedUrl(json.file_path, 60 * 60 * 24 * 7) // 7 gün
+      if (!signed.data?.signedUrl) {
+        return NextResponse.json({ error: 'Dosya linki üretilemedi.' }, { status: 500 })
+      }
+      file_url = signed.data.signedUrl
+    }
+
+    // 6) E-posta
     await notifyOrganizer({
       full_name: json.full_name,
       email: json.email,

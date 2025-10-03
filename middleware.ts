@@ -1,22 +1,21 @@
-// middleware.ts
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 
 export function middleware(req: NextRequest) {
-  if (!req.nextUrl.pathname.startsWith('/admin')) return
-
-  const auth = req.headers.get('authorization') || ''
-  const [scheme, encoded] = auth.split(' ')
-  if (scheme !== 'Basic' || !encoded) {
-    return new NextResponse('Auth required', {
-      status: 401,
-      headers: { 'WWW-Authenticate': 'Basic realm="Admin"' }
-    })
+  const url = req.nextUrl
+  if (url.pathname.startsWith('/admin')) {
+    const auth = req.headers.get('authorization') || ''
+    const [scheme, encoded] = auth.split(' ')
+    const [user, pass] = encoded ? Buffer.from(encoded, 'base64').toString().split(':') : []
+    if (scheme !== 'Basic' ||
+        user !== process.env.BASIC_AUTH_USER ||
+        pass !== process.env.BASIC_AUTH_PASS) {
+      return new NextResponse('Auth required', {
+        status: 401,
+        headers: { 'WWW-Authenticate': 'Basic realm="admin"' },
+      })
+    }
   }
-  const [u, p] = Buffer.from(encoded, 'base64').toString().split(':')
-  if (u !== process.env.BASIC_AUTH_USER || p !== process.env.BASIC_AUTH_PASS) {
-    return new NextResponse('Forbidden', { status: 403 })
-  }
+  return NextResponse.next()
 }
 
-export const config = { matcher: ['/admin/:path*'] }
+export const config = { matcher: ['/admin', '/admin/:path*'] }
