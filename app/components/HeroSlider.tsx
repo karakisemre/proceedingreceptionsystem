@@ -7,14 +7,14 @@ type Slide = {
   alt: string
   title: string
   subtitle?: string
-  ratio?: string        // "16/9", "21/9", "4/3" ... (opsiyonel, varsayılan 16/9)
-  pos?: string          // "center top", "50% 30%" ... (opsiyonel)
+  ratio?: string
+  pos?: string
 }
 
 export default function HeroSlider({
   slides,
   interval = 5000,
-  fit = 'cover',        // 'cover' -> kırpar, 'contain' -> boşluk bırakır
+  fit = 'cover',
 }: {
   slides: Slide[]
   interval?: number
@@ -32,10 +32,7 @@ export default function HeroSlider({
   const ratio = slides[i]?.ratio ?? '16/9'
 
   return (
-    <div
-      className="relative w-full rounded-2xl overflow-hidden shadow z-0"
-      style={{ aspectRatio: ratio }}
-    >
+    <div className="relative w-full rounded-2xl overflow-hidden shadow z-0" style={{ aspectRatio: ratio }}>
       {slides.map((s, idx) => (
         <Image
           key={idx}
@@ -49,11 +46,7 @@ export default function HeroSlider({
           style={{ objectPosition: s.pos ?? 'center center' }}
         />
       ))}
-
-      {/* overlay - tıklamayı engellemesin */}
       <div className="absolute inset-0 bg-black/30 z-10 pointer-events-none" />
-
-      {/* metin - tıklamayı engellemesin */}
       <div className="absolute bottom-6 left-6 right-6 text-white z-20 pointer-events-none">
         <h2 className="text-2xl md:text-4xl font-bold drop-shadow">{slides[i].title}</h2>
         {slides[i].subtitle && <p className="mt-2 max-w-2xl">{slides[i].subtitle}</p>}
