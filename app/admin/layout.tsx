@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import LogoutButton from '../components/LogoutButton'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,8 +12,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <Tab href="/admin/committees" label="Kurullar" />
         <Tab href="/admin/workshops" label="Çalıştay & Atölye" />
         <Tab href="/admin/pastpapers" label="Geçmiş Bildiriler" />
+        <LogoutButton />
       </nav>
       {children}
+
     </main>
   )
 }
