@@ -17,7 +17,7 @@ function parseBasicAuth(header: string | null) {
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request })
 
-  // 1) Supabase session'ı tazele (cookies: getAll/setAll)
+  // --- 1) Supabase session'ı tazele (cookies: getAll/setAll)
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -27,7 +27,6 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          // Response'a yazmak yeterli
           response = NextResponse.next({ request })
           ;(cookiesToSet as any[]).forEach((c: any) => {
             if (c.options) response.cookies.set(c.name, c.value, c.options as any)
@@ -37,14 +36,21 @@ export async function middleware(request: NextRequest) {
       },
     }
   )
-
   await supabase.auth.getUser()
 
-  // 2) /admin için yalnızca üst-düzey HTML gezintilerinde Basic Auth iste
+  // --- 2) Basic Auth (opsiyonel, env ile aç/kapat)
+  const ENABLE_BASIC = process.env.NEXT_PUBLIC_ENABLE_BASIC_AUTH === '1'
+  const HAVE_CREDS = !!(process.env.BASIC_AUTH_USER && process.env.BASIC_AUTH_PASS)
+
   const { pathname } = request.nextUrl
-  if (pathname.startsWith('/admin')) {
-    const mode  = request.headers.get('sec-fetch-mode') // "navigate" ise üst-düzey
-    const dest  = request.headers.get('sec-fetch-dest') // "document" / "iframe"
+  if (
+    ENABLE_BASIC &&
+    HAVE_CREDS &&
+    pathname.startsWith('/admin')
+  ) {
+    // Sadece üst düzey HTML navigasyonlarında iste
+    const mode   = request.headers.get('sec-fetch-mode') // "navigate"
+    const dest   = request.headers.get('sec-fetch-dest') // "document"/"iframe"
     const accept = request.headers.get('accept') || ''
     const isHtml = accept.includes('text/html')
     const isDocNav = mode === 'navigate' || dest === 'document' || dest === 'iframe'
@@ -59,9 +65,12 @@ export async function middleware(request: NextRequest) {
       if (!ok) {
         const unauthorized = new NextResponse('Auth required', {
           status: 401,
-          headers: { 'WWW-Authenticate': 'Basic realm="admin", charset="UTF-8"' },
+          headers: {
+            'WWW-Authenticate': 'Basic realm="admin", charset="UTF-8"',
+            'Cache-Control': 'no-store',
+          },
         })
-        // Supabase'in set ettiği cookie'leri 401'e taşı
+        // Supabase'in settiği cookie'leri 401'e taşı
         response.cookies.getAll().forEach(({ name, value, ...rest }) => {
           unauthorized.cookies.set(name, value, rest as any)
         })
